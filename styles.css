@@ -1475,6 +1475,37 @@ body {
     box-shadow: 0 0 20px rgba(78, 205, 196, 0.2);
 }
 
+.room-created {
+    text-align: center;
+    padding: 2rem;
+}
+
+.room-created h3 {
+    color: #4ecdc4;
+    margin-bottom: 1rem;
+}
+
+.room-created p {
+    color: #ffffff;
+    margin: 1rem 0;
+    font-size: 1.2rem;
+}
+
+.room-created strong {
+    color: #ffd700;
+    font-size: 1.4rem;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.5rem;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+}
+
+.waiting-text {
+    color: #e0e0e0;
+    font-style: italic;
+    margin-top: 1.5rem;
+}
+
 .online-game-setup {
     display: none;
     text-align: center;

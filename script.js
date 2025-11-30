@@ -48,6 +48,12 @@ const roomInputDiv = document.getElementById('roomInputDiv');
 const roomIdInput = document.getElementById('roomIdInput');
 const confirmJoinBtn = document.getElementById('confirmJoinBtn');
 
+console.log('Elements found:', {
+    createRoomBtn: !!createRoomBtn,
+    joinRoomBtn: !!joinRoomBtn,
+    roomInputDiv: !!roomInputDiv
+});
+
 // Темы
 const themeSelect = document.getElementById('themeSelect');
 
@@ -58,7 +64,7 @@ let difficulty = 'hard';
 let boardType = '3x3';
 let boardSize = 3;
 let winLength = 3;
-let gameMode = 'classic'; // 'classic', 'cooperation', 'reverse', 'mines', 'blitz'
+let gameMode = 'classic'; // 'classic', 'reverse', 'mines', 'blitz'
 
 // Система рейтинга и статистики
 let playerRating = 1000;
@@ -80,6 +86,7 @@ let blitzTimeLeft = 60; // Время на игру в режиме блиц (с
 let blitzTimer = null;
 let doubleMoveActive = false; // Флаг для двойного хода
 let powerUpsUsed = 0; // Счетчик использованных бустеров
+
 
 // Мультиплеер
 let isOnlineMultiplayer = false;
@@ -373,13 +380,8 @@ function makeMove(index, player) {
     } else {
         // В классическом режиме и кооперации проверяем обычную победу
         if (checkWin(player)) {
-            if (gameMode === 'cooperation') {
-                statusText.textContent = '🎉 Вы и ИИ победили вместе!';
-                updateGameStats('win');
-            } else {
-                statusText.textContent = player === 'X' ? '🎉 Вы победили!' : '🤖 ИИ победил!';
-                updateGameStats(player === 'X' ? 'win' : 'loss');
-            }
+            statusText.textContent = player === 'X' ? '🎉 Вы победили!' : '🤖 ИИ победил!';
+            updateGameStats(player === 'X' ? 'win' : 'loss');
             gameActive = false;
             stopGameTimer();
             createVictoryParticles();
@@ -389,11 +391,7 @@ function makeMove(index, player) {
     }
 
     if (checkTie()) {
-        if (gameMode === 'cooperation') {
-            statusText.textContent = '🤝 Вы и ИИ сыграли вничью!';
-        } else {
-            statusText.textContent = '🤝 Ничья!';
-        }
+        statusText.textContent = '🤝 Ничья!';
         gameActive = false;
         stopGameTimer();
         updateGameStats('tie');
@@ -405,18 +403,6 @@ function makeMove(index, player) {
         // В онлайн мультиплеере после хода обновляем статус и ждем соперника
         statusText.textContent = 'Ожидание хода соперника...';
         return; // Не меняем currentPlayer здесь
-    } else if (gameMode === 'cooperation') {
-        // В кооперации игроки ходят по очереди, но оба против системы
-        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-        if (currentPlayer === 'X') {
-            statusText.textContent = 'Ваш ход (X)';
-        } else {
-            statusText.textContent = '🤝 Ход союзника (ИИ)';
-            // Вызываем aiMove только если игра активна
-            if (gameActive) {
-                setTimeout(() => aiMove(), 500);
-            }
-        }
     } else {
         currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
         if (currentPlayer === 'X') {
@@ -448,21 +434,16 @@ function aiMove() {
     }
 
     let move;
-    if (gameMode === 'cooperation') {
-        // В режиме кооперации ИИ помогает игроку - выбирает оптимальный ход для победы
-        move = getBestMoveForCooperation();
-    } else {
-        switch (difficulty) {
-            case 'easy':
-                move = getRandomMove();
-                break;
-            case 'medium':
-                move = getMediumMove();
-                break;
-            case 'hard':
-                move = getBestMove();
-                break;
-        }
+    switch (difficulty) {
+        case 'easy':
+            move = getRandomMove();
+            break;
+        case 'medium':
+            move = getMediumMove();
+            break;
+        case 'hard':
+            move = getBestMove();
+            break;
     }
 
     if (move !== -1) {
@@ -470,61 +451,6 @@ function aiMove() {
     }
 }
 
-function getBestMoveForCooperation() {
-    // В кооперации ИИ выбирает ход, который помогает выиграть (для X)
-    let bestScore = -Infinity;
-    let bestMove = -1;
-
-    for (let i = 0; i < gameState.length; i++) {
-        if (gameState[i] === '') {
-            gameState[i] = 'X'; // Пробуем ход за игрока
-            let score = minimaxCooperation(gameState, 0, true);
-            gameState[i] = '';
-            if (score > bestScore) {
-                bestScore = score;
-                bestMove = i;
-            }
-        }
-    }
-
-    return bestMove;
-}
-
-function minimaxCooperation(board, depth, isMaximizing) {
-    // Проверяем, выиграл ли игрок X
-    if (checkWinOnBoard(board, 'X')) {
-        return 10 - depth;
-    }
-    if (checkWinOnBoard(board, 'O')) {
-        return depth - 10; // O мешает выиграть
-    }
-    if (checkTieOnBoard(board)) {
-        return 0;
-    }
-
-    const maxDepth = boardType === '3x3' ? 3 : boardType === '5x5' ? 2 : 1;
-    if (depth >= maxDepth) {
-        return 0;
-    }
-
-    let bestScore = isMaximizing ? -Infinity : Infinity;
-
-    for (let i = 0; i < board.length; i++) {
-        if (board[i] === '') {
-            board[i] = isMaximizing ? 'X' : 'O';
-            const score = minimaxCooperation(board, depth + 1, !isMaximizing);
-            board[i] = '';
-
-            if (isMaximizing) {
-                bestScore = Math.max(score, bestScore);
-            } else {
-                bestScore = Math.min(score, bestScore);
-            }
-        }
-    }
-
-    return bestScore;
-}
 
 function getRandomMove() {
     const availableMoves = [];
@@ -750,7 +676,7 @@ function handleGameModeChange() {
 
     // Показываем/скрываем бустеры
     const powerUps = document.querySelector('.power-ups');
-    if (gameMode === 'classic' || gameMode === 'cooperation') {
+    if (gameMode === 'classic') {
         powerUps.style.display = 'flex';
     } else {
         powerUps.style.display = 'none';
@@ -767,7 +693,7 @@ function handleRandomRules() {
     boardTypeSelect.value = boardType;
 
     // Случайный выбор режима игры
-    const gameModes = ['classic', 'cooperation', 'reverse'];
+    const gameModes = ['classic', 'reverse'];
     gameMode = gameModes[Math.floor(Math.random() * gameModes.length)];
     gameModeSelect.value = gameMode;
 
@@ -824,7 +750,6 @@ function getBoardTypeName(type) {
 function getGameModeName(mode) {
     const names = {
         'classic': 'Классический',
-        'cooperation': 'Кооперация',
         'reverse': 'Обратные правила'
     };
     return names[mode] || mode;
@@ -840,9 +765,7 @@ function getDifficultyName(diff) {
 }
 
 function updateGameStatus() {
-    if (gameMode === 'cooperation') {
-        statusText.textContent = '🤝 Режим кооперации: вы и ИИ вместе против системы!';
-    } else if (gameMode === 'reverse') {
+    if (gameMode === 'reverse') {
         statusText.textContent = '🔄 Обратные правила: проигрывает тот, кто соберет линию первым!';
     } else if (gameMode === 'mines') {
         statusText.textContent = '💣 Режим мин: избегайте клеток с минами!';
@@ -1030,8 +953,24 @@ function openOnlineMultiplayer() {
     // Имитация подключения к серверу
     setTimeout(() => {
         connectionStatus.innerHTML = '<p>✅ Подключено! Выберите действие:</p>';
-        document.querySelector('.online-menu').style.display = 'flex';
-        document.querySelector('.online-menu').style.flexDirection = 'column';
+        const onlineMenu = document.querySelector('.online-menu');
+        if (onlineMenu) {
+            onlineMenu.style.display = 'flex';
+            onlineMenu.style.flexDirection = 'column';
+
+            // Привязываем обработчики после показа меню
+            const createBtn = document.getElementById('createRoomBtn');
+            const joinBtn = document.getElementById('joinRoomBtn');
+
+            if (createBtn) {
+                createBtn.onclick = createOnlineRoom;
+                console.log('Create button handler attached');
+            }
+            if (joinBtn) {
+                joinBtn.onclick = joinOnlineRoom;
+                console.log('Join button handler attached');
+            }
+        }
     }, 1000);
 }
 
@@ -1046,6 +985,7 @@ function closeOnlineMultiplayerModal() {
 }
 
 function createOnlineRoom() {
+    console.log('Create room clicked');
     // Генерируем уникальный ID комнаты
     onlineGameId = 'room_' + Math.random().toString(36).substr(2, 9);
     onlinePlayerId = 'player_' + Math.random().toString(36).substr(2, 9);
@@ -1061,17 +1001,23 @@ function createOnlineRoom() {
     };
     localStorage.setItem('ticTacToeRoom_' + onlineGameId, JSON.stringify(roomData));
 
-    // Показываем информацию о комнате
-    showOnlineGameSetup('X', 'Ожидание соперника...');
+    // Показываем экран с ID комнаты
+    showRoomCreatedScreen();
 
     // Начинаем проверку на подключение соперника
     startRoomPolling();
 }
 
 function joinOnlineRoom() {
-    document.querySelector('.online-menu').style.display = 'none';
-    roomInputDiv.style.display = 'flex';
-    roomIdInput.focus();
+    console.log('Join room clicked');
+    const onlineMenu = document.querySelector('.online-menu');
+    if (onlineMenu) {
+        onlineMenu.style.display = 'none';
+    }
+    if (roomInputDiv) {
+        roomInputDiv.style.display = 'flex';
+        roomIdInput.focus();
+    }
 }
 
 function confirmJoinRoom() {
@@ -1102,6 +1048,34 @@ function confirmJoinRoom() {
 
     // Начинаем игру
     startOnlineGame();
+}
+
+function showRoomCreatedScreen() {
+    // Скрываем меню и показываем экран с ID комнаты
+    document.querySelector('.online-menu').style.display = 'none';
+    connectionStatus.innerHTML = `
+        <div class="room-created">
+            <h3>🏠 Комната создана!</h3>
+            <p>Код комнаты: <strong>${onlineGameId}</strong></p>
+            <button id="copyRoomCodeBtn" class="online-btn">📋 Скопировать код</button>
+            <p class="waiting-text">Ожидание соперника...</p>
+        </div>
+    `;
+
+    // Привязываем обработчик копирования
+    setTimeout(() => {
+        const copyBtn = document.getElementById('copyRoomCodeBtn');
+        if (copyBtn) {
+            copyBtn.onclick = () => {
+                navigator.clipboard.writeText(onlineGameId).then(() => {
+                    copyBtn.textContent = '✅ Скопировано!';
+                    setTimeout(() => {
+                        copyBtn.textContent = '📋 Скопировать код';
+                    }, 2000);
+                });
+            };
+        }
+    }, 100);
 }
 
 function showOnlineGameSetup(playerSymbol, opponent) {
@@ -1332,8 +1306,14 @@ tournamentModal.addEventListener('click', (event) => {
 
 // Онлайн мультиплеер обработчики
 closeOnlineMultiplayer.addEventListener('click', closeOnlineMultiplayerModal, { passive: true });
-createRoomBtn.addEventListener('click', createOnlineRoom, { passive: true });
-joinRoomBtn.addEventListener('click', joinOnlineRoom, { passive: true });
+createRoomBtn.addEventListener('click', () => {
+    console.log('Create room button clicked');
+    createOnlineRoom();
+}, { passive: true });
+joinRoomBtn.addEventListener('click', () => {
+    console.log('Join room button clicked');
+    joinOnlineRoom();
+}, { passive: true });
 confirmJoinBtn.addEventListener('click', confirmJoinRoom, { passive: true });
 copyRoomBtn.addEventListener('click', copyRoomId, { passive: true });
 onlineMultiplayerModal.addEventListener('click', (event) => {
