@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe with AI</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Крестики-Нолики с ИИ</h1>
+        <div class="difficulty-selector">
+            <label>Сложность:</label>
+            <select id="difficulty">
+                <option value="easy">Легко</option>
+                <option value="medium">Средне</option>
+                <option value="hard" selected>Сложно</option>
+            </select>
+        </div>
+        <div class="board-type-selector">
+            <label>Тип поля:</label>
+            <select id="boardType">
+                <option value="3x3">3x3 (Классика)</option>
+                <option value="5x5">5x5 (4 в ряд)</option>
+                <option value="hex">Гексагональная</option>
+                <option value="3d">3D (3x3x3)</option>
+            </select>
+        </div>
+        <div class="game-mode-selector">
+            <label>Режим игры:</label>
+            <select id="gameMode">
+                <option value="classic">Классический</option>
+                <option value="cooperation">Кооперация</option>
+                <option value="reverse">Обратные правила</option>
+                <option value="mines">Мины</option>
+                <option value="blitz">Блиц</option>
+            </select>
+            <button class="random-rules-btn" id="randomRulesBtn">🎲 Случайные правила</button>
+        </div>
+        <div class="power-ups">
+            <button class="power-up-btn" id="doubleMoveBtn" title="Ход в две клетки">⚡ Двойной ход</button>
+            <button class="power-up-btn" id="replaceBtn" title="Заменить символ противника">🔄 Замена</button>
+        </div>
+        <div class="multiplayer-controls">
+            <button class="multiplayer-btn" id="onlineMultiplayerBtn" title="Онлайн игра через WebSocket">🌐 Онлайн мультиплеер</button>
+            <button class="multiplayer-btn" id="tournamentBtn" title="Турнирная таблица">🏆 Турнир</button>
+        </div>
+        <div class="theme-selector">
+            <label>Тема:</label>
+            <select id="themeSelect">
+                <option value="cosmic">🌌 Космос</option>
+                <option value="medieval">🏰 Средневековье</option>
+                <option value="cyberpunk">🤖 Киберпанк</option>
+            </select>
+        </div>
+        <div class="game-status" id="status">Ваш ход (X)</div>
+        <div class="game-info">
+            <div class="rating-display" id="ratingDisplay">Рейтинг: 1000</div>
+            <div class="timer-display" id="timerDisplay">00:00</div>
+        </div>
+        <div class="board" id="board">
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+        </div>
+        <div class="game-controls">
+            <button class="control-btn" id="undoBtn" title="Отменить ход">↶ Отмена</button>
+            <button class="control-btn" id="hintBtn" title="Подсказка">💡 Подсказка</button>
+            <button class="control-btn" id="historyBtn" title="История ходов">📋 История</button>
+            <button class="reset-btn" id="resetBtn">Сбросить игру</button>
+            <button class="chat-btn" id="chatBtn">💬 Чат с ИИ</button>
+        </div>
+    </div>
+
+    <!-- Chat Modal -->
+    <div class="chat-modal" id="chatModal">
+        <div class="chat-container">
+            <div class="chat-header">
+                <h3>🤖 Чат с ИИ</h3>
+                <button class="close-chat" id="closeChat">✕</button>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="message ai-message">
+                    <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <p>Привет! Я ИИ-помощник игры в крестики-нолики. Задай мне вопрос о игре!</p>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" id="chatInput" placeholder="Задайте вопрос об игре..." maxlength="200">
+                <button id="sendMessage">Отправить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tournament Modal -->
+    <div class="tournament-modal" id="tournamentModal">
+        <div class="tournament-container">
+            <div class="tournament-header">
+                <h3>🏆 Турнирная таблица</h3>
+                <button class="close-tournament" id="closeTournament">✕</button>
+            </div>
+            <div class="tournament-content">
+                <div class="stats-section">
+                    <h4>Ваша статистика</h4>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Игр сыграно:</span>
+                            <span class="stat-value" id="gamesPlayed">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Побед:</span>
+                            <span class="stat-value" id="gamesWon">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Поражений:</span>
+                            <span class="stat-value" id="gamesLost">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Ничьих:</span>
+                            <span class="stat-value" id="gamesTied">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Винрейт:</span>
+                            <span class="stat-value" id="winRate">0%</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Рейтинг:</span>
+                            <span class="stat-value" id="currentRating">1000</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="achievements-section">
+                    <h4>Достижения</h4>
+                    <div class="achievements-list" id="achievementsList">
+                        <!-- Достижения будут добавлены динамически -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Online Multiplayer Modal -->
+    <div class="online-multiplayer-modal" id="onlineMultiplayerModal">
+        <div class="online-multiplayer-container">
+            <div class="online-multiplayer-header">
+                <h3>🌐 Онлайн мультиплеер</h3>
+                <button class="close-online-multiplayer" id="closeOnlineMultiplayer">✕</button>
+            </div>
+            <div class="online-multiplayer-content">
+                <div class="connection-status" id="connectionStatus">
+                    <p>🔄 Подключение к серверу...</p>
+                </div>
+                <div class="online-game-setup" id="onlineGameSetup" style="display: none;">
+                    <div class="player-info">
+                        <p>Вы: <span id="myPlayerSymbol">X</span></p>
+                        <p>Соперник: <span id="opponentName">Ожидание...</span></p>
+                    </div>
+                    <div class="game-room">
+                        <p>Комната: <span id="roomId">Создание...</span></p>
+                        <button class="copy-room-btn" id="copyRoomBtn">📋 Скопировать ID комнаты</button>
+                    </div>
+                </div>
+                <div class="online-menu">
+                    <button class="online-btn" id="createRoomBtn">🏠 Создать комнату</button>
+                    <button class="online-btn" id="joinRoomBtn">🚪 Присоединиться</button>
+                    <div class="room-input" id="roomInputDiv" style="display: none;">
+                        <input type="text" id="roomIdInput" placeholder="Введите ID комнаты" maxlength="10">
+                        <button class="online-btn" id="confirmJoinBtn">✅ Присоединиться</button>
+                    </div>
+                </div>
+                <div class="game-instructions">
+                    <p>🌍 <strong>Онлайн игра:</strong></p>
+                    <ul>
+                        <li>Создайте комнату или присоединитесь к существующей</li>
+                        <li>Поделитесь ID комнаты с другом</li>
+                        <li>Играйте в реальном времени через интернет</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
